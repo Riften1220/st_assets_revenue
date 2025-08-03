@@ -140,6 +140,34 @@ def create_bubble_chart(df, selected_period, selected_stocks):
             colors.append(f'rgba({r},{g},{b},{a:.2f})')
             edge_colors.append(f'rgba({max(r-40,0)},{max(g-40,0)},{max(b-40,0)},0.95)')
 
+    # 根据气泡大小调整文字显示策略
+    text_labels = []
+    text_sizes = []
+    
+    for i, (idx, row) in enumerate(filtered_df.iterrows()):
+        bubble_size = bubble_sizes.iloc[i]
+        stock_name = row['股票名称']
+        
+        # 根据气泡大小调整文字大小和显示内容
+        if bubble_size < 50:
+            text_size = 8
+            # 小气泡显示简化文字
+            if len(stock_name) > 4:
+                text_labels.append(stock_name[:3] + '...')
+            else:
+                text_labels.append(stock_name)
+        elif bubble_size < 80:
+            text_size = 10
+            if len(stock_name) > 6:
+                text_labels.append(stock_name[:5] + '...')
+            else:
+                text_labels.append(stock_name)
+        else:
+            text_size = 12
+            text_labels.append(stock_name)
+        
+        text_sizes.append(text_size)
+
     # 气泡
     fig.add_trace(go.Scatter(
         x=filtered_df['总资产周转率'],
@@ -153,16 +181,17 @@ def create_bubble_chart(df, selected_period, selected_stocks):
             opacity=0.7,
             sizemin=10
         ),
-        text=filtered_df['股票名称'],
+        text=text_labels,
         textposition='middle center',
-        textfont=dict(size=10, color='white'),
+        textfont=dict(size=text_sizes, color='#333333', family='Arial'),  # 深灰色
         hovertemplate=(
-            '<b>%{text}</b><br>' +
+            '<b>%{customdata}</b><br>' +
             '总资产周转率: %{x:.3f}<br>' +
             '销售净利率: %{y:.2f}%<br>' +
             '总资产净利率: ' + filtered_df['总资产净利率_数值'].round(4).astype(str) + '<br>' +
             '<extra></extra>'
         ),
+        customdata=filtered_df['股票名称'],  # 用于hover显示完整名称
         name=''
     ))
     # 更新布局
